@@ -1,0 +1,4 @@
+Seeed Studio XIAO ESP32S3 Sense Housing Design by seeedstudio on Thingiverse: https://www.thingiverse.com/thing:6850252
+
+Summary:
+A 3d-printed housing design for Seeed Studio XIAO ESP32S3 Sense.Seeed Studio XIAO ESP32S3 Sense is a mini vision AI camera &amp; microphone dev board based on the dual-core ESP32-S3 chip, supporting both Wi-Fi and BLE wireless connectivities, which allows battery charge. It integrates built-in camera sensor, digital microphone. It offers 8MB PSRAM, 8MB FLASH, and external SD card slot. All of these make it suitable for embedded ML, like intelligent voice and vision AI.https://www.seeedstudio.com/XIAO-ESP32S3-Sense-p-5639.htmlMore about Seeed Studio XIAO: https://www.seeedstudio.com/xiao-series-page

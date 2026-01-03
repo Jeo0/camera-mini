@@ -1,0 +1,1 @@
+Seeed Studio XIAO ESP32S3 Sense 3D Model by seeedstudio on Thingiverse: https://www.thingiverse.com/thing:6855424

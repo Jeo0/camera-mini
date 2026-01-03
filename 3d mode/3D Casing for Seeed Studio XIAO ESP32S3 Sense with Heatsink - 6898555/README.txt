@@ -1,0 +1,4 @@
+3D Casing for Seeed Studio XIAO ESP32S3 Sense with Heatsink by seeedstudio on Thingiverse: https://www.thingiverse.com/thing:6898555
+
+Summary:
+This is a 3D Casing for Seeed Studio XIAO ESP32S3 Sense with Heatsink, and with this new casing, you can even put the camera of XIAO ESP32S3 Sense directly on a glass for your unique applications.Seeed Studio XIAO ESP32S3 leverages dual-core ESP32S3 chip, supporting both Wi-Fi and BLE wireless connectivities, which allows battery charge. It integrates built-in camera sensor, digital microphone. It offers 8MB PSRAM, 8MB FLASH, and external SD card slot. All of these make it suitable for embedded ML, like intelligent voice and vision AI.Learn more: https://www.seeedstudio.com/XIAO-ESP32S3-Sense-p-5639.htmlMore about Seeed Studio XIAO: https://www.seeedstudio.com/xiao-series-page
