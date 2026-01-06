@@ -1,4 +1,6 @@
 #include "camera_helpers.h"
+#include "camera_functions.h"
+
 // ================= CAMERA & SD =================
 bool initCamera() {
   camera_config_t config;

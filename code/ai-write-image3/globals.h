@@ -15,5 +15,5 @@
 #define SD_CS_PIN       21    // Internal
 // #define LED_PIN         21    // Internal
 
-RTC_DATA_ATTR int fileCount = 1; 
+extern int fileCount;
 

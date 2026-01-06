@@ -1,3 +1,4 @@
+#pragma once
 
 //File: index_ov2640.html.gz, Size: 6687
 #define index_ov2640_html_gz_len 6687
