@@ -12,8 +12,12 @@
 
 #define BUTTON_PIN      2     // D1 on board
 #define FLASH_PIN       3     // D2 
+
+#define MODE_PIN        5     // D4
+#define REDFLASH_PIN    6     // D5
+
 #define SD_CS_PIN       21    // Internal
 // #define LED_PIN         21    // Internal
 
-extern int fileCount;
+extern int gFileCount;
 

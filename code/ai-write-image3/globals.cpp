@@ -1,3 +1,3 @@
 #include "globals.h"
 
-RTC_DATA_ATTR int fileCount = 1;
+RTC_DATA_ATTR int gFileCount = 1;
