@@ -11,6 +11,8 @@ public:
 
 // photo; take 1 pic, then deep sleep 
 class PhotoState : public State {
+private:
+    int jpegIncrement;
 public:
     void enter(CameraContext& p_ctx) override;
     void update(CameraContext& p_ctx) override;
@@ -22,6 +24,7 @@ class RecordState : public State {
 private:
     File videoFile;
     bool isRecording;
+    int fileIncrement;
 public:
     void enter(CameraContext& p_ctx) override;
     void update(CameraContext& p_ctx) override; // record 1 frame per tick

@@ -2,4 +2,4 @@
 #include "globals.h"
 
 bool initCamera();
-void captureSequence();
+void createNextFilename(char* buffer, const char* prefix, const char* extension);

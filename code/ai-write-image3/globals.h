@@ -19,5 +19,4 @@
 #define SD_CS_PIN       21    // Internal
 // #define LED_PIN         21    // Internal
 
-extern int gFileCount;
 

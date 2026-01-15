@@ -74,6 +74,19 @@ bool initCamera() {
     */
 }
 
+void createNextFilename(char* p_buffer, const char* p_prefix, const char* p_extension){
+    int iii = 1;
+    while (true) {
+        sprintf(p_buffer, "/%s%03d.%s", p_prefix, iii, p_extension);
+        if (!SD.exists(buffer)) {
+            break; 
+        }
+        count++;
+    }
+}
+
+
+/*
 void captureSequence() {
     // LED ON (Indicates "Shutter Open / Busy")
     digitalWrite(FLASH_PIN, LOW); 
@@ -140,7 +153,6 @@ void captureSequence() {
 }
 
 
-/*
 void recordSequence() {
     char filename[32];
     sprintf(filename, "/video%d.avi", gFileCount);
