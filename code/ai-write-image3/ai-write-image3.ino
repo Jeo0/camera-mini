@@ -18,10 +18,12 @@ void setup() {
 }
 
 void loop() {
+  /* im removing the record feature
   // tick state machine
   if(mainCamera) {
     mainCamera->update();
   }
 
   delay(1);
+  */
 }

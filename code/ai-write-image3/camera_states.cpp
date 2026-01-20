@@ -29,8 +29,15 @@ void DecisionState::enter(CameraContext& p_ctx) {
     // so we use internal resistor when we are on LOW (photo)
     // and use the external resistor when we are on HIGH (recording)
     // so by default, it is LOW + the pin is stable at that state
+    /*
     if(MODE_PIN == HIGH) p_ctx.changeState(std::unique_ptr<RecordState>(new RecordState()));
     else                p_ctx.changeState(std::unique_ptr<PhotoState>(new PhotoState()));
+    */
+
+    // we are removing the record state as it heats the camera too much inside the case 
+    // also to reduce the physical size requirements so no more heatsink
+    p_ctx.changeState(std::unique_ptr<PhotoState>(new PhotoState()));
+
 }
 
 void DecisionState::update(CameraContext& p_ctx) {} // no update; instant
@@ -68,13 +75,16 @@ void PhotoState::enter(CameraContext& p_ctx){
         } else {
             // generation of file name and save
             char filename[32];
-            createNextFilename(filename, "image_", "jpg");
+            // createNextFilename(filename, "image_", "jpg");
+            createNextFilename(filename, "A_image", "jpg");
 
             File file = SD.open(filename, FILE_WRITE);
             if (file) {
                 file.write(fb->buf, fb->len);
                 file.close();
-                Serial.printf("Saved: %s\n", filename);
+                char e_buffer[100] {};
+                snprintf(e_buffer, sizeof(e_buffer), "Saved: %s\n", filename);
+                Serial.printf(e_buffer);
             } else {
                 blinkError(2);
             }
@@ -86,12 +96,16 @@ void PhotoState::enter(CameraContext& p_ctx){
     }
     
     digitalWrite(FLASH_PIN, HIGH);
-    delay(50);
     if(PWDN_GPIO_NUM != -1) digitalWrite(PWDN_GPIO_NUM, HIGH);
+    delay(50);
+
+    p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
+
 }
 
 void PhotoState::update(CameraContext& p_ctx){
-    p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
+    // this isnt reached
+    // p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
 }
 
 void PhotoState::exit(CameraContext& p_ctx) {}
@@ -109,7 +123,8 @@ void RecordState::enter(CameraContext& p_ctx) {
     }
 
     char filename[32];
-    createNextFilename(filename, "video", "avi");
+    // createNextFilename(filename, "video", "avi");
+    createNextFilename(filename, "A_video", "avi");
 
     videoFile = SD.open(filename, FILE_WRITE);
     if(!videoFile){
@@ -119,7 +134,9 @@ void RecordState::enter(CameraContext& p_ctx) {
         return;
     }
 
-    Serial.println("Recording to %s", filename);
+    char e_buffer[100] {};
+    snprintf(e_buffer, sizeof(e_buffer), "Recording to %s", filename);
+    Serial.printf(e_buffer);
     isRecording = true;
     digitalWrite(FLASH_PIN, LOW); // LED ON
 }
@@ -145,7 +162,6 @@ void RecordState::exit(CameraContext& p_ctx){
     if(videoFile){
         videoFile.close();
         Serial.println("Video saved:");
-        gFileCount++;
     }
 
     digitalWrite(FLASH_PIN, HIGH); // OFF LED

@@ -29,6 +29,7 @@ bool initCamera() {
     config.fb_location = CAMERA_FB_IN_PSRAM; // 
     config.grab_mode = CAMERA_GRAB_WHEN_EMPTY; // 
 
+
     config.frame_size = FRAMESIZE_UXGA; // 1600x1200
     // SVGA = 800x600
 
@@ -43,8 +44,13 @@ bool initCamera() {
     }
 
     esp_err_t err = esp_camera_init(&config);
-    return (err == ESP_OK);
-
+    if (err != ESP_OK) {
+        char e_buffer[150] {};
+        snprintf(e_buffer, sizeof(e_buffer), "Camera init failed with error 0x%x", err);
+        Serial.printf();
+        return;
+    }
+    cameraSettingsInit();
     // we turn off this SD card, so we can still use it even we do not have any thing inserted
     // initialize SD card 
     /*
@@ -75,14 +81,28 @@ bool initCamera() {
 }
 
 void createNextFilename(char* p_buffer, const char* p_prefix, const char* p_extension){
-    int iii = 1;
+    int iii_count = 1;
     while (true) {
-        sprintf(p_buffer, "/%s%03d.%s", p_prefix, iii, p_extension);
-        if (!SD.exists(buffer)) {
+        sprintf(p_buffer, "/%s%03d.%s", p_prefix, iii_count, p_extension);
+        if (!SD.exists(p_buffer)) {
             break; 
         }
-        count++;
+        iii_count++;
     }
+}
+
+void cameraSettingsInit() {
+    // changing settings of the camera 
+    // ----- see the camera settings here: 
+    // https://randomnerdtutorials.com/esp32-cam-ov2640-camera-settings/
+
+    sensor_t * camera_settings = esp_camera_sensor_get();
+    // 0=disable, 1=enable
+    camera_settings->set_hmirror(camera_settings, 0);       // so we can read whatevers being outputted there // left-right swap
+    camera_settings->set_vflip(camera_settings, 1);         // up-down swap
+    camera_settings->set_whilebals(camera_settings, 1);     // if 0, colors may look weird when lighting changes
+    camera_settings->set_awb_gain(camera_settings, 1);      // automatic white balance
+    camera_settings->set_wb_mode(camera_settings, 0);       // 0=auto, 1=sunny, 2=cloudy, 3=office, 4=home
 }
 
 
