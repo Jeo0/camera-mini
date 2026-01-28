@@ -29,14 +29,15 @@ void DecisionState::enter(CameraContext& p_ctx) {
     // so we use internal resistor when we are on LOW (photo)
     // and use the external resistor when we are on HIGH (recording)
     // so by default, it is LOW + the pin is stable at that state
-    /*
-    if(MODE_PIN == HIGH) p_ctx.changeState(std::unique_ptr<RecordState>(new RecordState()));
-    else                p_ctx.changeState(std::unique_ptr<PhotoState>(new PhotoState()));
-    */
-
+    
     // we are removing the record state as it heats the camera too much inside the case 
     // also to reduce the physical size requirements so no more heatsink
     p_ctx.changeState(std::unique_ptr<PhotoState>(new PhotoState()));
+#ifdef _WITH_RECORD_STATE_
+    if(MODE_PIN == HIGH) p_ctx.changeState(std::unique_ptr<RecordState>(new RecordState()));
+    else                p_ctx.changeState(std::unique_ptr<PhotoState>(new PhotoState()));
+#endif
+
 
 }
 

@@ -3,6 +3,8 @@
 #include "camera_states.h"
 // #include "camera_helpers.h"
 // #include "camera_functions.h"
+// #define _WITH_RECORD_STATE_    // turn this on when you have the record (implementation is still unstable 
+                                  // as the termination logic requires you to hold the button)
 
 CameraContext* mainCamera = nullptr;
 
@@ -18,12 +20,12 @@ void setup() {
 }
 
 void loop() {
-  /* im removing the record feature
+#ifdef _WITH_RECORD_STATE_
+  // im removing the record feature
   // tick state machine
   if(mainCamera) {
     mainCamera->update();
   }
 
   delay(1);
-  */
 }
