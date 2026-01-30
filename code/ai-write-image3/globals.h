@@ -12,6 +12,8 @@
 
 #define BUTTON_PIN      2     // D1 on board
 #define FLASH_PIN       3     // D2 
+#define FLASH_OFF       HIGH
+#define FLASH_ON        LOW
 
 // #define MODE_PIN        5     // D4
 // #define REDFLASH_PIN    6     // D5

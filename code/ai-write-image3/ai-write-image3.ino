@@ -12,7 +12,7 @@ void setup() {
   Serial.begin(115200);
 
   pinMode(FLASH_PIN, OUTPUT);
-  digitalWrite(FLASH_PIN, HIGH);
+  digitalWrite(FLASH_PIN, FLASH_OFF);
 
   // initialization of state machine
   // DecisionState enter()
@@ -26,6 +26,7 @@ void loop() {
   if(mainCamera) {
     mainCamera->update();
   }
+#endif
 
   delay(1);
 }

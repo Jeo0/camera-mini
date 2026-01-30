@@ -22,7 +22,10 @@ void CameraContext::update() {
 // =================================================================
 void DecisionState::enter(CameraContext& p_ctx) {
     Serial.println("Checking Mode Pin State enter");
+    Serial.println("jajaja photyostate immediately");
+#ifdef _WITH_RECORD_STATE_
     pinMode(MODE_PIN, INPUT_PULLDOWN);
+#endif
 
     // we want to have less power usage
     // normally, we are on photo mode
@@ -34,7 +37,7 @@ void DecisionState::enter(CameraContext& p_ctx) {
     // also to reduce the physical size requirements so no more heatsink
     p_ctx.changeState(std::unique_ptr<PhotoState>(new PhotoState()));
 #ifdef _WITH_RECORD_STATE_
-    if(MODE_PIN == HIGH) p_ctx.changeState(std::unique_ptr<RecordState>(new RecordState()));
+    if(digitalRead(MODE_PIN) == HIGH) p_ctx.changeState(std::unique_ptr<RecordState>(new RecordState()));
     else                p_ctx.changeState(std::unique_ptr<PhotoState>(new PhotoState()));
 #endif
 
@@ -49,7 +52,7 @@ void PhotoState::enter(CameraContext& p_ctx){
     Serial.println("PhotoState enter");
 
     // LED ON (Indicates "Shutter Open / Busy")
-    digitalWrite(FLASH_PIN, LOW); // LED ON
+    digitalWrite(FLASH_PIN, FLASH_ON); 
 
     // init SD
     // Increase SD SPI Speed to 16MHz (Default is 4MHz)
@@ -96,7 +99,7 @@ void PhotoState::enter(CameraContext& p_ctx){
         esp_camera_deinit();
     }
     
-    digitalWrite(FLASH_PIN, HIGH);
+    digitalWrite(FLASH_PIN, FLASH_OFF);
     if(PWDN_GPIO_NUM != -1) digitalWrite(PWDN_GPIO_NUM, HIGH);
     delay(50);
 
@@ -139,7 +142,7 @@ void RecordState::enter(CameraContext& p_ctx) {
     snprintf(e_buffer, sizeof(e_buffer), "Recording to %s", filename);
     Serial.printf(e_buffer);
     isRecording = true;
-    digitalWrite(FLASH_PIN, LOW); // LED ON
+    digitalWrite(FLASH_PIN, FLASH_ON); // LED ON
 }
 
 void RecordState::update(CameraContext& p_ctx) {
@@ -165,7 +168,7 @@ void RecordState::exit(CameraContext& p_ctx){
         Serial.println("Video saved:");
     }
 
-    digitalWrite(FLASH_PIN, HIGH); // OFF LED
+    digitalWrite(FLASH_PIN, FLASH_OFF); // OFF LED
     esp_camera_deinit();
 }
 
@@ -178,8 +181,8 @@ void DeepSleepState::enter(CameraContext& p_ctx) {
     pinMode(BUTTON_PIN, INPUT);
     while(digitalRead(BUTTON_PIN) == HIGH) delay(10); 
 
-    // always reset the FLASH PIN TO LOW
-    digitalWrite(FLASH_PIN, LOW);
+    // always reset the FLASH PIN TO OFF (HIGH)
+    digitalWrite(FLASH_PIN, FLASH_OFF);
 
     // wake up configuration
     esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN, 1); // Wake on HIGH

@@ -47,8 +47,8 @@ bool initCamera() {
     if (err != ESP_OK) {
         char e_buffer[150] {};
         snprintf(e_buffer, sizeof(e_buffer), "Camera init failed with error 0x%x", err);
-        Serial.printf();
-        return;
+        Serial.printf("%s\n", e_buffer);
+        return false;
     }
     cameraSettingsInit();
     // we turn off this SD card, so we can still use it even we do not have any thing inserted
@@ -78,6 +78,9 @@ bool initCamera() {
         Serial.println("UNKNOWN");
       }
     */
+
+    // once all is good
+    return true;
 }
 
 void createNextFilename(char* p_buffer, const char* p_prefix, const char* p_extension){
@@ -100,7 +103,7 @@ void cameraSettingsInit() {
     // 0=disable, 1=enable
     camera_settings->set_hmirror(camera_settings, 0);       // so we can read whatevers being outputted there // left-right swap
     camera_settings->set_vflip(camera_settings, 1);         // up-down swap
-    camera_settings->set_whilebals(camera_settings, 1);     // if 0, colors may look weird when lighting changes
+    camera_settings->set_whitebal(camera_settings, 1);     // if 0, colors may look weird when lighting changes
     camera_settings->set_awb_gain(camera_settings, 1);      // automatic white balance
     camera_settings->set_wb_mode(camera_settings, 0);       // 0=auto, 1=sunny, 2=cloudy, 3=office, 4=home
 }
