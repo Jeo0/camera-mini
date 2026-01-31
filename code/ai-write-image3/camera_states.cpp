@@ -58,42 +58,44 @@ void PhotoState::enter(CameraContext& p_ctx){
     // Increase SD SPI Speed to 16MHz (Default is 4MHz)
     // helna, we use 16MHZ; final
     // This drastically reduces the time spent saving the file.
-    if (!SD.begin(SD_CS_PIN, SPI, 16000000)) {
-        blinkError(10);
+    if (!SD.begin(SD_CS_PIN, SPI, SD_SPI_SPEED)) {
+        blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MAJOR);
     }
 
     if (!initCamera()) {
-        blinkError(20);
+        blinkError(BLINK_TIMES_ERROR_CAMERA, BLINK_MILLI_DURATION_MAJOR);
         SD.end();
         p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
         return;  // ← Exit early on error
     } else {
+        delay(45);  // addition for better power stablization
         // Reduced Warmup
         // 1 Frame is usually enough to clear the black buffer on OV2640
         // Reduced delay to 20ms
         camera_fb_t* warmup_fb = esp_camera_fb_get();
         esp_camera_fb_return(warmup_fb);
-        delay(20);
+        //delay(20);
+        delay(45);
 
         // Capture
         camera_fb_t* fb = esp_camera_fb_get();
         if (!fb) {
-            blinkError(5);
+            blinkError(BLINK_TIMES_ERROR_CAMERA, BLINK_MILLI_DURATION_MINOR);
         } else {
             // generation of file name and save
             char filename[32];
             // createNextFilename(filename, "image_", "jpg");
-            createNextFilename(filename, "A_image", "jpg");
+            createNextFilename(filename, "B_image", "jpg");
 
             File file = SD.open(filename, FILE_WRITE);
-            if (file) {
+            if (!file) {
+                blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MINOR);
+            } else {
                 file.write(fb->buf, fb->len);
                 file.close();
                 char e_buffer[100] {};
                 snprintf(e_buffer, sizeof(e_buffer), "Saved: %s\n", filename);
                 Serial.printf(e_buffer);
-            } else {
-                blinkError(2);
             }
             esp_camera_fb_return(fb);
 
@@ -123,9 +125,9 @@ void PhotoState::exit(CameraContext& p_ctx) {}
 void RecordState::enter(CameraContext& p_ctx) {
     Serial.println("RecordingState enter");
 
-    if(!SD.begin(SD_CS_PIN, SPI, 16000000) || !initCamera()){
+    if(!SD.begin(SD_CS_PIN, SPI, SD_SPI_SPEED) || !initCamera()){
         Serial.println("Error reading SD enter");
-        blinkError(5);
+        blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MAJOR);
         p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
         return;
     }
@@ -137,7 +139,7 @@ void RecordState::enter(CameraContext& p_ctx) {
     videoFile = SD.open(filename, FILE_WRITE);
     if(!videoFile){
         Serial.println("Error opening video file");;
-        blinkError(3);
+        blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MINOR);
         p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
         return;
     }

@@ -35,7 +35,7 @@ bool initCamera() {
 
     // Lower quality slightly for faster write speed
     // 10 = Best/Slowest, 12 = Great/Faster, 15 = Good/Fastest
-    config.jpeg_quality = 20; //  
+    config.jpeg_quality = 15; //  
 
 
     if(PWDN_GPIO_NUM != -1) {
@@ -56,6 +56,7 @@ bool initCamera() {
     /*
     if (!SD.begin(SD_PIN_CS)) {
         Serial.println("SD card initialization failed!");
+        blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MAJOR);
         return;
     }
 
@@ -101,8 +102,8 @@ void cameraSettingsInit() {
 
     sensor_t * camera_settings = esp_camera_sensor_get();
     // 0=disable, 1=enable
-    camera_settings->set_hmirror(camera_settings, 1);       // so we can read whatevers being outputted there // left-right swap
-    camera_settings->set_vflip(camera_settings, 1);         // up-down swap
+    camera_settings->set_hmirror(camera_settings, 0);       // so we can read whatevers being outputted there // left-right swap
+    camera_settings->set_vflip(camera_settings, 0);         // up-down swap
     camera_settings->set_whitebal(camera_settings, 1);     // if 0, colors may look weird when lighting changes
     camera_settings->set_awb_gain(camera_settings, 1);      // automatic white balance
     camera_settings->set_wb_mode(camera_settings, 0);       // 0=auto, 1=sunny, 2=cloudy, 3=office, 4=home

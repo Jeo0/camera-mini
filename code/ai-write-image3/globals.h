@@ -22,9 +22,13 @@
 // #define LED_PIN         21    // Internal
 
 
-/* ERROR BLINKS:
- * 20   : camera initialize
- * 10   : SD initialize
- *
- * the record state isnt updated
-*/
+// used for error blinks to be used with the function 
+// blinkError 
+#define BLINK_TIMES_ERROR_CAMERA    5
+#define BLINK_TIMES_ERROR_SDCARD    3
+#define BLINK_MILLI_DURATION_MINOR  20
+#define BLINK_MILLI_DURATION_MAJOR  70
+
+// sd card speed 16MHZ to 4 MHZ 
+#define SD_SPI_SPEED    4000000
+//#define SD_SPI_SPEED    16000000
