@@ -59,11 +59,14 @@ void PhotoState::enter(CameraContext& p_ctx){
     // helna, we use 16MHZ; final
     // This drastically reduces the time spent saving the file.
     if (!SD.begin(SD_CS_PIN, SPI, 16000000)) {
-        blinkError(5);
+        blinkError(10);
     }
 
     if (!initCamera()) {
-        blinkError(5);
+        blinkError(20);
+        SD.end();
+        p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
+        return;  // ← Exit early on error
     } else {
         // Reduced Warmup
         // 1 Frame is usually enough to clear the black buffer on OV2640
@@ -97,6 +100,7 @@ void PhotoState::enter(CameraContext& p_ctx){
         }
         
         esp_camera_deinit();
+        SD.end();
     }
     
     digitalWrite(FLASH_PIN, FLASH_OFF);

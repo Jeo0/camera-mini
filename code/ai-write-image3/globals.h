@@ -22,3 +22,9 @@
 // #define LED_PIN         21    // Internal
 
 
+/* ERROR BLINKS:
+ * 20   : camera initialize
+ * 10   : SD initialize
+ *
+ * the record state isnt updated
+*/

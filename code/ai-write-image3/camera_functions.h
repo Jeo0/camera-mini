@@ -1,3 +1,3 @@
 #pragma once
 
-void blinkError(int times);
+void blinkError(int p_times);

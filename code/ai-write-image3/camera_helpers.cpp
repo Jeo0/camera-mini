@@ -101,7 +101,7 @@ void cameraSettingsInit() {
 
     sensor_t * camera_settings = esp_camera_sensor_get();
     // 0=disable, 1=enable
-    camera_settings->set_hmirror(camera_settings, 0);       // so we can read whatevers being outputted there // left-right swap
+    camera_settings->set_hmirror(camera_settings, 1);       // so we can read whatevers being outputted there // left-right swap
     camera_settings->set_vflip(camera_settings, 1);         // up-down swap
     camera_settings->set_whitebal(camera_settings, 1);     // if 0, colors may look weird when lighting changes
     camera_settings->set_awb_gain(camera_settings, 1);      // automatic white balance

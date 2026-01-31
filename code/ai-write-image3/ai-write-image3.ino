@@ -20,13 +20,12 @@ void setup() {
 }
 
 void loop() {
-#ifdef _WITH_RECORD_STATE_
+  // this is effectively not achieved
   // im removing the record feature
   // tick state machine
   if(mainCamera) {
     mainCamera->update();
   }
-#endif
 
   delay(1);
 }
