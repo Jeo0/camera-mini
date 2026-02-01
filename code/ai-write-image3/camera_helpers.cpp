@@ -1,6 +1,10 @@
 #include "camera_helpers.h"
 #include "camera_functions.h"
 
+Preferences g_prefs;
+uint32_t g_imageCounter = 0;
+// RTC_DATA_ATTR uint32_t g_imageCounter = 0;
+
 // ================= CAMERA & SD =================
 bool initCamera() {
     camera_config_t config;
@@ -22,7 +26,7 @@ bool initCamera() {
     config.pin_sscb_scl = SIOC_GPIO_NUM;
     config.pin_pwdn = PWDN_GPIO_NUM;
     config.pin_reset = RESET_GPIO_NUM;
-    config.xclk_freq_hz = 20000000;
+    config.xclk_freq_hz = XCLK_FREQ_HZ;
 
     config.pixel_format = PIXFORMAT_JPEG;
     config.fb_count = 1; // 
@@ -30,12 +34,13 @@ bool initCamera() {
     config.grab_mode = CAMERA_GRAB_WHEN_EMPTY; // 
 
 
+    // camera_settings
     config.frame_size = FRAMESIZE_UXGA; // 1600x1200
     // SVGA = 800x600
 
     // Lower quality slightly for faster write speed
     // 10 = Best/Slowest, 12 = Great/Faster, 15 = Good/Fastest
-    config.jpeg_quality = 20; //  
+    config.jpeg_quality = JPEG_QUALITY; // 20 
 
 
     if(PWDN_GPIO_NUM != -1) {
@@ -46,8 +51,10 @@ bool initCamera() {
     esp_err_t err = esp_camera_init(&config);
     if (err != ESP_OK) {
         char e_buffer[150] {};
+#ifdef _DEBUG_PRINT_SHOW_
         snprintf(e_buffer, sizeof(e_buffer), "Camera init failed with error 0x%x", err);
         Serial.printf("%s\n", e_buffer);
+#endif
         return false;
     }
     cameraSettingsInit();
@@ -84,16 +91,6 @@ bool initCamera() {
     return true;
 }
 
-void createNextFilename(char* p_buffer, const char* p_prefix, const char* p_extension){
-    int iii_count = 1;
-    while (true) {
-        sprintf(p_buffer, "/%s%03d.%s", p_prefix, iii_count, p_extension);
-        if (!SD.exists(p_buffer)) {
-            break; 
-        }
-        iii_count++;
-    }
-}
 
 void cameraSettingsInit() {
     // changing settings of the camera 
@@ -102,109 +99,66 @@ void cameraSettingsInit() {
 
     sensor_t * camera_settings = esp_camera_sensor_get();
     // 0=disable, 1=enable
-    camera_settings->set_hmirror(camera_settings, 0);       // so we can read whatevers being outputted there // left-right swap
-    camera_settings->set_vflip(camera_settings, 1);         // up-down swap
-    camera_settings->set_whitebal(camera_settings, 1);     // if 0, colors may look weird when lighting changes
+    // =========== ORIENTATION
+    camera_settings->set_hmirror(camera_settings, 1);       // so we can read whatevers being outputted there // left-right swap
+    camera_settings->set_vflip(camera_settings, 0);         // up-down swap
+
+    // =========== IMAGE QUALITY & COLOR CORRECTION
+    camera_settings->set_lenc(camera_settings, 1);       // lens correction (fixes the default dark corners/vignette) 
+    camera_settings->set_dcw(camera_settings, 0);        // downsize compare white (helps with auto-exposure)
+
+    // =========== WB and WG
+    camera_settings->set_whitebal(camera_settings, 1);      // if 0, colors may look weird when lighting changes
     camera_settings->set_awb_gain(camera_settings, 1);      // automatic white balance
     camera_settings->set_wb_mode(camera_settings, 0);       // 0=auto, 1=sunny, 2=cloudy, 3=office, 4=home
+
+    // =========== EXPOSURE
+    // If images are still too dark or noisy, you can tweak these
+    camera_settings->set_aec2(camera_settings, 1);       // automatic exposure control 2 (DSP)
+    camera_settings->set_ae_level(camera_settings, 0);   // auto exposure level (-2 to 2)
+    camera_settings->set_gain_ctrl(camera_settings, 0);  // auto gain control (on)
+    
+    // ============ SETTINGS TO ACHIEVE THAT VHS/RETRO
+    camera_settings->set_contrast(camera_settings, 1);      // semi contrast        -2 to 2
+    camera_settings->set_brightness(camera_settings, 1);    // boost brightness     -2 to 2
+    camera_settings->set_saturation(camera_settings, 1);    // achieve that bleeding colors??   -2 to 2
+
 }
 
 
-/*
-void captureSequence() {
-    // LED ON (Indicates "Shutter Open / Busy")
-    digitalWrite(FLASH_PIN, LOW); 
+// ================= FILENAME CREATION =================
+void createNextFilename(char* p_buffer, const char* p_prefix, const char* p_extension){
 
-    // Increase SD SPI Speed to 16MHz (Default is 4MHz)
-    // helna, we use 4MHZ; final
-    // This drastically reduces the time spent saving the file.
-    if (!SD.begin(SD_CS_PIN, SPI, 4000000)) {
-        blinkError(5);
-        return;
+
+
+    // -------- OPTION C: DIRECTORY SHARDING --------
+    // keeps FAT directories small even with millions of images
+
+    uint32_t img = g_imageCounter++;
+    uint16_t dir = img / 1000;   // 1000 images per folder
+    uint16_t file = img % 1000;
+
+    char dirPath[64];
+    sprintf(dirPath, "/DCIM/%03u", dir);
+
+    if (!SD.exists(dirPath)) {
+        SD.mkdir(dirPath);
     }
 
-    if (!initCamera()) {
-        blinkError(5);
-        return;
-    }
-
-    // Reduced Warmup
-    // 1 Frame is usually enough to clear the black buffer on OV2640
-    // Reduced delay to 20ms
-    camera_fb_t* warmup_fb = esp_camera_fb_get();
-    esp_camera_fb_return(warmup_fb);
-    delay(20);
-
-    // Capture
-    camera_fb_t* fb = esp_camera_fb_get();
-    if (!fb) {
-        blinkError(5);
-        return;
-    }
-
-    // Filename logic
-    // NOTE: If you remove the battery, gFileCount resets to 1.
-    // The loop below will find the next gap, but it takes time if you have 1000 photos.
-    char filename[32];
-    while (true) {
-        sprintf(filename, "/image_%03d.jpg", gFileCount);
-        if (SD.exists(filename)) {
-            gFileCount++;
-        } else {
-            break;
-        }
-    }
-
-    // Save
-    File file = SD.open(filename, FILE_WRITE);
-    if (file) {
-        file.write(fb->buf, fb->len);
-        file.close();
-        gFileCount++;
-    } else {
-        blinkError(2);
-    }
-
-    esp_camera_fb_return(fb);
-
-    // Turn LED OFF (Capture Complete)
-    digitalWrite(FLASH_PIN, HIGH);
-    delay(50);
-
-    // Power down camera immediately
-    esp_camera_deinit();
-    if(PWDN_GPIO_NUM != -1) digitalWrite(PWDN_GPIO_NUM, HIGH); 
+    sprintf(p_buffer, "%s/%s_%03u.%s",
+            dirPath,
+            p_prefix,
+            file,
+            p_extension);
 }
 
-
-void recordSequence() {
-    char filename[32];
-    sprintf(filename, "/video%d.avi", gFileCount);
-    videoFile = SD.open(filename, FILE_WRITE);
-    if (!videoFile) {
-        Serial.println("Error opening video file!");
-        return;
-    }
-    Serial.printf("Recording video：%s\n", filename);
-
-
-    // Start capturing video frames
-    //
-    camera_fb_t *fb = esp_camera_fb_get();
-    if (!fb) {
-        Serial.println("Error getting framebuffer!");
-        break;
-    }
-    videoFile.write(fb->buf, fb->len);
-    esp_camera_fb_return(fb);
-    }
-
-
-    // Close the video file
-    videoFile.close();
-    Serial.printf("Video saved: %s\n", filename);
-    gFileCount++;
-
-    Serial.println("Video will begin in one minute, please be ready.");
+void initFilenameSystem() {
+    g_prefs.begin("camera", false);
+    g_imageCounter = g_prefs.getUInt("img", 0);
 }
-*/
+
+void commitFilenameCounter() {
+    // write only once per photo to reduce flash wear
+    g_prefs.putUInt("img", g_imageCounter);
+    g_prefs.end();
+}

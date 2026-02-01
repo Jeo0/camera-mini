@@ -1,6 +1,7 @@
 #include "camera_states.h"
 #include "camera_helpers.h"
 #include "camera_functions.h"
+#include <driver/rtc_io.h> 
 
 CameraContext::CameraContext() {
     // decide what state based on pin
@@ -21,8 +22,10 @@ void CameraContext::update() {
 
 // =================================================================
 void DecisionState::enter(CameraContext& p_ctx) {
+#ifdef _DEBUG_PRINT_SHOW_
     Serial.println("Checking Mode Pin State enter");
     Serial.println("jajaja photyostate immediately");
+#endif
 #ifdef _WITH_RECORD_STATE_
     pinMode(MODE_PIN, INPUT_PULLDOWN);
 #endif
@@ -49,65 +52,110 @@ void DecisionState::update(CameraContext& p_ctx) {} // no update; instant
 
 // =================================================================
 void PhotoState::enter(CameraContext& p_ctx){
+    initFilenameSystem();
+#ifdef _DEBUG_PRINT_SHOW_
     Serial.println("PhotoState enter");
+#endif
 
     // LED ON (Indicates "Shutter Open / Busy")
     digitalWrite(FLASH_PIN, FLASH_ON); 
 
-    // init SD
+
+    // STEP 0: init SD
     // Increase SD SPI Speed to 16MHz (Default is 4MHz)
     // helna, we use 16MHZ; final
     // This drastically reduces the time spent saving the file.
     if (!SD.begin(SD_CS_PIN, SPI, SD_SPI_SPEED)) {
+#ifdef _DEBUG_PRINT_SHOW_
+        Serial.println("Error reading SD enter");
+        delay(100);     // give time for serial flush
+#endif
         blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MAJOR);
+        p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
+        return;
     }
 
+
+    // STEP 1: init CAMERA
     if (!initCamera()) {
+#ifdef _DEBUG_PRINT_SHOW_
+        Serial.println("Error Camera Initialization");
+        delay(100);     // give time for serial flush
+#endif
         blinkError(BLINK_TIMES_ERROR_CAMERA, BLINK_MILLI_DURATION_MAJOR);
         SD.end();
         p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
         return;  // ← Exit early on error
-    } else {
-        delay(45);  // addition for better power stablization
-        // Reduced Warmup
-        // 1 Frame is usually enough to clear the black buffer on OV2640
-        // Reduced delay to 20ms
-        camera_fb_t* warmup_fb = esp_camera_fb_get();
-        esp_camera_fb_return(warmup_fb);
-        //delay(20);
-        delay(45);
+    } 
+    
 
-        // Capture
-        camera_fb_t* fb = esp_camera_fb_get();
-        if (!fb) {
-            blinkError(BLINK_TIMES_ERROR_CAMERA, BLINK_MILLI_DURATION_MINOR);
-        } else {
-            // generation of file name and save
-            char filename[32];
-            // createNextFilename(filename, "image_", "jpg");
-            createNextFilename(filename, "B_image", "jpg");
+    // STEP 2: all is good
+    delay(25);  // addition for better power stablization
+    // Reduced Warmup
+    // 1 Frame is usually enough to clear the black buffer on OV2640
+    // Reduced delay to 20ms
+    camera_fb_t* warmup_fb = esp_camera_fb_get();
+    esp_camera_fb_return(warmup_fb);
+    //delay(20);
+    delay(25);
 
-            File file = SD.open(filename, FILE_WRITE);
-            if (!file) {
-                blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MINOR);
-            } else {
-                file.write(fb->buf, fb->len);
-                file.close();
-                char e_buffer[100] {};
-                snprintf(e_buffer, sizeof(e_buffer), "Saved: %s\n", filename);
-                Serial.printf(e_buffer);
-            }
-            esp_camera_fb_return(fb);
 
-        }
-        
-        esp_camera_deinit();
-        SD.end();
-    }
+    // STEP 3: capture
+    camera_fb_t* fb = esp_camera_fb_get();
+    if (!fb) {
+#ifdef _DEBUG_PRINT_SHOW_
+        Serial.println("cannot capture???");
+#endif
+        esp_camera_deinit();  
+        SD.end();  
+        blinkError(BLINK_TIMES_ERROR_CAMERA, BLINK_MILLI_DURATION_MAJOR);
+        p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
+        return;
+    } 
+
+
+    // STEP 4: generation of file name and save
+    char filename[32];
+    // createNextFilename(filename, "image_", "jpg");
+    createNextFilename(filename, "GGGG_image", "jpg");
+
+    File file = SD.open(filename, FILE_WRITE);
+    if (!file) {
+#ifdef _DEBUG_PRINT_SHOW_
+        Serial.println("cant create file");
+#endif
+        esp_camera_deinit();  
+        SD.end();  
+        blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MINOR);
+        p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
+        return;
+    } 
+    file.write(fb->buf, fb->len);
+    file.close();
+    char e_buffer[100] {};
+#ifdef _DEBUG_PRINT_SHOW_
+    snprintf(e_buffer, sizeof(e_buffer), "Saved: %s\n", filename);
+    Serial.printf(e_buffer);
+#endif
+    commitFilenameCounter();
+
+    // STEP success: last parts
+    esp_camera_fb_return(fb);
+    esp_camera_deinit();
+    SD.end();
+    SPI.end();
     
     digitalWrite(FLASH_PIN, FLASH_OFF);
-    if(PWDN_GPIO_NUM != -1) digitalWrite(PWDN_GPIO_NUM, HIGH);
+
+    // POWER DA FAK DOWN CAMERA U GOING FAKENG HOT 
+    if(PWDN_GPIO_NUM != -1) {               
+        pinMode(PWDN_GPIO_NUM, OUTPUT);
+        digitalWrite(PWDN_GPIO_NUM, HIGH);
+    }
     delay(50);
+
+
+
 
     p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
 
@@ -123,10 +171,14 @@ void PhotoState::exit(CameraContext& p_ctx) {}
 
 // =================================================================
 void RecordState::enter(CameraContext& p_ctx) {
+#ifdef _DEBUG_PRINT_SHOW_
     Serial.println("RecordingState enter");
+#endif
 
     if(!SD.begin(SD_CS_PIN, SPI, SD_SPI_SPEED) || !initCamera()){
+#ifdef _DEBUG_PRINT_SHOW_
         Serial.println("Error reading SD enter");
+#endif
         blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MAJOR);
         p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
         return;
@@ -138,15 +190,19 @@ void RecordState::enter(CameraContext& p_ctx) {
 
     videoFile = SD.open(filename, FILE_WRITE);
     if(!videoFile){
+#ifdef _DEBUG_PRINT_SHOW_
         Serial.println("Error opening video file");;
+#endif
         blinkError(BLINK_TIMES_ERROR_SDCARD, BLINK_MILLI_DURATION_MINOR);
         p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
         return;
     }
 
     char e_buffer[100] {};
+#ifdef _DEBUG_PRINT_SHOW_
     snprintf(e_buffer, sizeof(e_buffer), "Recording to %s", filename);
     Serial.printf(e_buffer);
+#endif
     isRecording = true;
     digitalWrite(FLASH_PIN, FLASH_ON); // LED ON
 }
@@ -163,7 +219,9 @@ void RecordState::update(CameraContext& p_ctx) {
     
     // checking exit condition
     if(digitalRead(BUTTON_PIN) == LOW){
+#ifdef _DEBUG_PRINT_SHOW_
         Serial.println("Butten pressed; recording stop");
+#endif
         p_ctx.changeState(std::unique_ptr<DeepSleepState>(new DeepSleepState()));
     }
 }
@@ -171,7 +229,9 @@ void RecordState::update(CameraContext& p_ctx) {
 void RecordState::exit(CameraContext& p_ctx){
     if(videoFile){
         videoFile.close();
+#ifdef _DEBUG_PRINT_SHOW_
         Serial.println("Video saved:");
+#endif
     }
 
     digitalWrite(FLASH_PIN, FLASH_OFF); // OFF LED
@@ -181,7 +241,9 @@ void RecordState::exit(CameraContext& p_ctx){
 
 // ====================================================
 void DeepSleepState::enter(CameraContext& p_ctx) {
+#ifdef _DEBUG_PRINT_SHOW_
     Serial.println("DeepSleepState enter");
+#endif
 
     // every deep sleep we enter pinmode to ensure
     pinMode(BUTTON_PIN, INPUT);
@@ -190,6 +252,9 @@ void DeepSleepState::enter(CameraContext& p_ctx) {
     // always reset the FLASH PIN TO OFF (HIGH)
     digitalWrite(FLASH_PIN, FLASH_OFF);
 
+    // this prevents current leakage through RTC domain
+    setCpuFrequencyMhz(80);
+    
     // wake up configuration
     esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN, 1); // Wake on HIGH
     esp_deep_sleep_start();
