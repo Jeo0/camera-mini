@@ -117,7 +117,7 @@ void PhotoState::enter(CameraContext& p_ctx){
     // STEP 4: generation of file name and save
     char filename[32];
     // createNextFilename(filename, "image_", "jpg");
-    createNextFilename(filename, "GGGG_image", "jpg");
+    createNextFilename(filename, "KATEY_image", "jpg");
 
     File file = SD.open(filename, FILE_WRITE);
     if (!file) {

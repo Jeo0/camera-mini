@@ -131,14 +131,13 @@ void createNextFilename(char* p_buffer, const char* p_prefix, const char* p_exte
 
 
 
-    // -------- OPTION C: DIRECTORY SHARDING --------
     // keeps FAT directories small even with millions of images
 
     uint32_t img = g_imageCounter++;
     uint16_t dir = img / 1000;   // 1000 images per folder
     uint16_t file = img % 1000;
 
-    char dirPath[64];
+    char dirPath[32];
     sprintf(dirPath, "/DCIM/%03u", dir);
 
     if (!SD.exists(dirPath)) {

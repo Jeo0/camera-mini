@@ -27,7 +27,7 @@
 
 
 // ================= DEBUG =================
-#define _DEBUG_PRINT_SHOW_
+// #define _DEBUG_PRINT_SHOW_
 // #define _WITH_RECORD_STATE_    // turn this on when you have the record (implementation is still unstable 
                                   // as the termination logic requires you to hold the button)
 
@@ -49,7 +49,7 @@ extern Preferences g_prefs;
 // sd card speed 16MHZ to 4 MHZ 
 // #define SD_SPI_SPEED    4000000
 #define SD_SPI_SPEED    16000000
-#define XCLK_FREQ_HZ    16000000// 20000000     // 10MHz is too nice (no streaks of lines), 20MHz has too many; now choose 15MHz
+#define XCLK_FREQ_HZ    15000000// 20000000     // 10MHz is too nice (no streaks of lines), 20MHz has too many; now choose 15MHz
 
 // camera settings:
 #define JPEG_QUALITY    24
